@@ -1,0 +1,6 @@
+cradle:
+  cabal:
+    - path: "./src"
+      component: "lib:dl-pixiv-fanbox"
+    - path: "./app"
+      component: "exe:dl-pixiv-fanbox"

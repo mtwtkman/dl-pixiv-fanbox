@@ -1,0 +1,45 @@
+cabal-version: 3.0
+name:          dl-pixiv-fanbox
+version:       0.1.0.0
+author:        924277+mtwtkman@users.noreply.github.com
+maintainer:    mtwtkman
+build-type:    Simple
+
+common warnings
+  ghc-options: -Wall
+
+common basic
+  build-depends:    base
+  default-language: Haskell2010
+
+executable dl-pixiv-fanbox
+  import:         warnings, basic
+  main-is:        Main.hs
+  build-depends:  dl-pixiv-fanbox
+  hs-source-dirs: app
+
+library
+  import:          warnings, basic
+  hs-source-dirs:  src
+  build-depends:
+    , aeson
+    , bytestring
+    , directory
+    , exceptions
+    , modern-uri
+    , regex-tdfa
+    , req
+    , scalpel
+    , text
+    , time
+
+  exposed-modules: PixivFanbox
+  other-modules:
+    PixivFanbox.Api
+    PixivFanbox.Api.Entity
+    PixivFanbox.Api.PostListCreator
+    PixivFanbox.Api.PostInfo
+    PixivFanbox.Api.SupportingCreatorList
+    PixivFanbox.Downloader
+    PixivFanbox.Config
+    PixivFanbox.Req
