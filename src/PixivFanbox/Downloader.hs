@@ -3,8 +3,10 @@
 
 module PixivFanbox.Downloader where
 
-import Data.ByteString.Char8 (ByteString)
+import qualified Data.ByteString.Char8 as B
+import Data.Maybe (fromJust)
 import Data.Text (Text)
+import qualified Data.Text as Tx
 import Network.HTTP.Req
   ( GET (GET),
     NoReqBody (NoReqBody),
@@ -13,13 +15,14 @@ import Network.HTTP.Req
     bsResponse,
     defaultHttpConfig,
     header,
-    https,
     req,
     responseBody,
     runReq,
+    useHttpsURI,
   )
 import PixivFanbox.Config (Config)
 import PixivFanbox.Req (sessionIdCookieHeader)
+import Text.URI (mkURI)
 
 headers :: Config -> Option 'Https
 headers config =
@@ -28,10 +31,17 @@ headers config =
     <> header "cache-control" "no-cache"
     <> sessionIdCookieHeader config
 
-download :: Config -> Text -> IO ByteString
-download config url = runReq defaultHttpConfig $ do
-  resp <- req GET (https url) NoReqBody bsResponse (headers config)
+buildDestDirPath :: Text -> Text -> Text -> Text
+buildDestDirPath root userName title = root <> "/" <> userName <> "/" <> title
+
+download :: Config -> Text -> IO B.ByteString
+download config escapedUrlString = runReq defaultHttpConfig $ do
+  uri <- mkURI escapedUrlString
+  let url = fst $ fromJust (useHttpsURI uri)
+  resp <- req GET url NoReqBody bsResponse (headers config)
   return $ responseBody resp
 
-retrieve :: Config -> Text -> FilePath -> IO ()
-retrieve config url dest = undefined
+retrieve :: Config -> Text -> Text -> IO ()
+retrieve config url dest = do
+  blob <- download config url
+  B.writeFile (Tx.unpack dest) blob
