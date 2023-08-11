@@ -19,7 +19,7 @@ import Network.HTTP.Req
     useHttpsURI,
   )
 import PixivFanbox.Api (basicHeaders, buildApiUri)
-import PixivFanbox.Api.Entity (PostImage, PostItem, User)
+import PixivFanbox.Api.Entity (PostImage)
 import PixivFanbox.Config (Config)
 import Text.URI (URI)
 
@@ -27,9 +27,9 @@ apiUrl :: Text -> Req URI
 apiUrl postId = buildApiUri $ "post.info?postId=" <> postId
 
 data Response = Response
-  { images :: [PostImage]
-  , title :: Text
-  , creatorName :: Text
+  { images :: [PostImage],
+    title :: Text,
+    creatorName :: Text
   }
   deriving (Show, Eq, Generic)
 
@@ -39,9 +39,12 @@ instance FromJSON Response where
     userInfo <- metaInfo .: "user"
     inner <- metaInfo .: "body"
     Response
-      <$> inner .: "images"
-      <*> metaInfo .: "title"
-      <*> userInfo .: "name"
+      <$> inner
+      .: "images"
+      <*> metaInfo
+      .: "title"
+      <*> userInfo
+      .: "name"
 
 get :: Text -> Config -> IO Response
 get postId config = runReq defaultHttpConfig $ do
