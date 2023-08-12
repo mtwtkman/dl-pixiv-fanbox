@@ -23,6 +23,7 @@ library
   hs-source-dirs:  src
   build-depends:
     , aeson
+    , async
     , bytestring
     , directory
     , exceptions
@@ -37,9 +38,10 @@ library
   other-modules:
     PixivFanbox.Api
     PixivFanbox.Api.Entity
-    PixivFanbox.Api.PostListCreator
     PixivFanbox.Api.PostInfo
+    PixivFanbox.Api.PostListCreator
     PixivFanbox.Api.SupportingCreatorList
-    PixivFanbox.Downloader
     PixivFanbox.Config
+    PixivFanbox.Downloader
     PixivFanbox.Req
+    PixivFanbox.Util
