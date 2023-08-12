@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module PixivFanbox.Downloader where
 
@@ -26,6 +27,7 @@ import PixivFanbox.Api.Entity (PostImage (..))
 import PixivFanbox.Config (Config)
 import PixivFanbox.Req (sessionIdCookieHeader)
 import PixivFanbox.Util (chunkedList)
+import Text.Printf (printf)
 import Text.URI (mkURI)
 
 headers :: Config -> Option 'Https
@@ -35,16 +37,24 @@ headers config =
     <> header "cache-control" "no-cache"
     <> sessionIdCookieHeader config
 
-buildDestDirPath :: Text -> Text -> Text -> Text
-buildDestDirPath root userName title = root <> "/" <> userName <> "/" <> title
+data DestInfo = DestInfo
+  { destRoot :: Text,
+    postTitle :: Text,
+    creatorName :: Text
+  }
+  deriving (Show, Eq)
 
-buildDestPath :: Text -> PostImage -> Text
-buildDestPath destDirPath postImage =
-  destDirPath
-    <> "/"
-    <> toStrict (postImageId postImage)
-    <> "."
-    <> toStrict (postImageExtension postImage)
+buildDestDirPath :: DestInfo -> Text
+buildDestDirPath DestInfo {..} = destRoot <> "/" <> creatorName <> "/" <> postTitle
+
+buildDestPath :: Text -> PostImage -> Int -> Text
+buildDestPath destDirPath postImage page =
+  let filename = Tx.pack $ printf "%03d" page
+   in destDirPath
+        <> "/"
+        <> filename
+        <> "."
+        <> toStrict (postImageExtension postImage)
 
 download :: Config -> Text -> IO B.ByteString
 download config escapedUrlString = runReq defaultHttpConfig $ do
@@ -58,17 +68,17 @@ retrieve config url dest = do
   blob <- download config url
   B.writeFile (Tx.unpack dest) blob
 
-retrieveImage :: Config -> Text -> Text -> Text -> PostImage -> IO Text
-retrieveImage config destRoot title creatorName postImage = do
-  let destDirPath = buildDestDirPath destRoot creatorName title
-  let destPath = buildDestPath destDirPath postImage
+retrieveImage :: Config -> DestInfo -> PostImage -> Int -> IO Text
+retrieveImage config destInfo postImage page = do
+  let destDirPath = buildDestDirPath destInfo
+  let destPath = buildDestPath destDirPath postImage page
   retrieve config (toStrict $ postImageOriginalUrl postImage) destPath
   return destPath
 
-retrieveImageChunk :: Int -> Config -> Text -> Text -> Text -> [PostImage] -> IO [Text]
-retrieveImageChunk size config destRoot title creatorName postImages =
+retrieveImageChunk :: Int -> Config -> DestInfo -> [PostImage] -> IO [Text]
+retrieveImageChunk size config destInfo postImages =
   foldr
-    ( \chunk dests -> dests <> mapConcurrently (retrieveImage config destRoot title creatorName) chunk
+    ( \chunk dests -> dests <> mapConcurrently (\(page, image) -> retrieveImage config destInfo image page) chunk
     )
     (return [])
-    (chunkedList size postImages)
+    (chunkedList size (zip [1 ..] postImages))
