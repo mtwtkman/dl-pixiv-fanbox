@@ -38,9 +38,9 @@ library
   other-modules:
     PixivFanbox.Api
     PixivFanbox.Api.Entity
-    PixivFanbox.Api.PostInfo
-    PixivFanbox.Api.PostListCreator
-    PixivFanbox.Api.SupportingCreatorList
+    PixivFanbox.Api.Post.Info
+    PixivFanbox.Api.Post.ListCreator
+    PixivFanbox.Api.Plan.ListSupporting
     PixivFanbox.Config
     PixivFanbox.Downloader
     PixivFanbox.Req

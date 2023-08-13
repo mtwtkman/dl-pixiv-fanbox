@@ -1,12 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module PixivFanbox.Api.PostListCreator where
+module PixivFanbox.Api.Post.Info where
 
 import Data.Aeson (FromJSON (..), withObject, (.:))
 import Data.Maybe (fromJust)
 import Data.Text.Lazy (Text)
-import qualified Data.Text.Lazy as Tx
 import GHC.Generics (Generic)
 import Network.HTTP.Req
   ( GET (GET),
@@ -20,31 +19,36 @@ import Network.HTTP.Req
     useHttpsURI,
   )
 import PixivFanbox.Api (basicHeaders, buildApiUri)
-import PixivFanbox.Api.Entity (PostItem)
+import PixivFanbox.Api.Entity (PostImage)
 import PixivFanbox.Config (Config)
 import Text.URI (URI)
 
-apiUrl :: Int -> Text -> Req URI
-apiUrl limit creatorId =
-  buildApiUri $
-    "post.listCreator?creatorId="
-      <> creatorId
-      <> "&maxPublishedDatetime=9999-12-31+00:00:00&maxId=999999999999&limit="
-      <> Tx.pack (show limit)
+apiUrl :: Text -> Req URI
+apiUrl postId = buildApiUri $ "post.info?postId=" <> postId
 
-newtype Response = Response
-  { items :: [PostItem]
+data Response = Response
+  { images :: [PostImage],
+    title :: Text,
+    creatorName :: Text
   }
   deriving (Show, Eq, Generic)
 
 instance FromJSON Response where
   parseJSON = withObject "Response" $ \outer -> do
-    inner <- outer .: "body"
-    Response <$> inner .: "items"
+    metaInfo <- outer .: "body"
+    userInfo <- metaInfo .: "user"
+    inner <- metaInfo .: "body"
+    Response
+      <$> inner
+      .: "images"
+      <*> metaInfo
+      .: "title"
+      <*> userInfo
+      .: "name"
 
-get :: Int -> Text -> Config -> IO Response
-get limit creatorId config = runReq defaultHttpConfig $ do
-  uri <- apiUrl limit creatorId
+get :: Text -> Config -> IO Response
+get postId config = runReq defaultHttpConfig $ do
+  uri <- apiUrl postId
   let (url, uriOptions) = fromJust (useHttpsURI uri)
   let options = basicHeaders config <> uriOptions
   resp <- req GET url NoReqBody jsonResponse options

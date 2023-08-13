@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module PixivFanbox.Api.SupportingCreatorList where
+module PixivFanbox.Api.Plan.ListSupporting where
 
 import Data.Aeson (FromJSON(..), withObject, (.:))
 import Data.Maybe (fromJust)
