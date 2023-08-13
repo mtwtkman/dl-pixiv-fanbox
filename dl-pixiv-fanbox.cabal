@@ -38,7 +38,8 @@ library
   exposed-modules: PixivFanbox
   other-modules:
     PixivFanbox.Action.FetchSupportingCreator
-    PixivFanbox.Action.FetchWork
+    PixivFanbox.Action.FetchPosts
+    PixivFanbox.Action.RetrieveContents
     PixivFanbox.Api
     PixivFanbox.Api.Entity
     PixivFanbox.Api.Plan.ListSupporting

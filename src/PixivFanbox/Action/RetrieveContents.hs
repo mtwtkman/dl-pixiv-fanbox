@@ -1,4 +1,4 @@
-module PixivFanbox.Action.FetchWork where
+module PixivFanbox.Action.RetrieveContents where
 
 import qualified Data.Text as Tx
 import qualified Data.Text.Lazy as LT
