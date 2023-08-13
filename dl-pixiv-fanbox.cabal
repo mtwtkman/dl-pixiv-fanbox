@@ -45,3 +45,4 @@ library
     PixivFanbox.Downloader
     PixivFanbox.Req
     PixivFanbox.Util
+    PixivFanbox.Action.FetchWork

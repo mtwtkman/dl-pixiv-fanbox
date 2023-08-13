@@ -1,4 +1,5 @@
-dist-newstyle
+dist-newstyle/
 config.ini
 req.sh
 *.jpeg
+exam/

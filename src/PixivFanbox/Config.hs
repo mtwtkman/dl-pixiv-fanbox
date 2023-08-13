@@ -17,6 +17,7 @@ data Error
   = NoEnvVarProvided B.ByteString
   | ConfigFileNotFound
   | SessionIdNotFound
+  | ZeroDownloadChunkSize
   deriving (Show)
 
 sessionIdEnvVar :: B.ByteString
@@ -41,14 +42,19 @@ fromConfigFile configFilePath defaultDownloadChunkSize = do
   if isFile
     then do
       content <- B.readFile configFilePath
-      return $ fmap (`Config` parseDownloadChunkSize content) (parseSessionId content)
+      return
+        ( do
+            sessionId <- parseSessionId content
+            downloadChunkSize <- parseDownloadChunkSize content
+            return $ Config sessionId downloadChunkSize
+        )
     else return (Left ConfigFileNotFound)
   where
     sessionIdPattern :: B.ByteString
-    sessionIdPattern = "session_id=([a-zA-Z0-9_]+)"
+    sessionIdPattern = "^session_id=([a-zA-Z0-9_]+)"
 
     downloadChunkSizePattern :: B.ByteString
-    downloadChunkSizePattern = "chunk_size=([0-9]+)"
+    downloadChunkSizePattern = "^download_chunk_size=([0-9]+)"
 
     parseSessionId :: B.ByteString -> Either Error B.ByteString
     parseSessionId content = do
@@ -57,9 +63,10 @@ fromConfigFile configFilePath defaultDownloadChunkSize = do
         [x] -> Right x
         _ -> Left SessionIdNotFound
 
-    parseDownloadChunkSize :: B.ByteString -> Int
+    parseDownloadChunkSize :: B.ByteString -> Either Error Int
     parseDownloadChunkSize content =
       let (_, _, _, matched) = content =~ downloadChunkSizePattern :: (B.ByteString, B.ByteString, B.ByteString, [B.ByteString])
        in case matched of
-            [x] -> read (B.unpack x)
-            _ -> defaultDownloadChunkSize
+            ["0"] -> Left ZeroDownloadChunkSize
+            [x] -> Right $ read (B.unpack x)
+            _ -> Right defaultDownloadChunkSize
