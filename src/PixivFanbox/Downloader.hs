@@ -24,7 +24,7 @@ import Network.HTTP.Req
     useHttpsURI,
   )
 import PixivFanbox.Api.Entity (PostImage (..))
-import PixivFanbox.Config (Config)
+import PixivFanbox.Config (Config (..))
 import PixivFanbox.Req (sessionIdCookieHeader)
 import PixivFanbox.Util (chunkedList)
 import Text.Printf (printf)
@@ -75,10 +75,10 @@ retrieveImage config destInfo postImage page = do
   retrieve config (toStrict $ postImageOriginalUrl postImage) destPath
   return destPath
 
-retrieveImageChunk :: Int -> Config -> DestInfo -> [PostImage] -> IO [Text]
-retrieveImageChunk size config destInfo postImages =
+retrieveImageChunk :: Config -> DestInfo -> [PostImage] -> IO [Text]
+retrieveImageChunk config destInfo postImages =
   foldr
     ( \chunk dests -> dests <> mapConcurrently (\(page, image) -> retrieveImage config destInfo image page) chunk
     )
     (return [])
-    (chunkedList size (zip [1 ..] postImages))
+    (chunkedList (configDownloadChunkSize config) (zip [1 ..] postImages))

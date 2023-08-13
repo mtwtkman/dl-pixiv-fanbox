@@ -7,7 +7,10 @@ import System.Directory (doesFileExist)
 import System.Environment (lookupEnv)
 import Text.Regex.TDFA ((=~))
 
-newtype Config = Config B.ByteString
+data Config = Config
+  { configSessionId :: B.ByteString,
+    configDownloadChunkSize :: Int
+  }
   deriving (Show)
 
 data Error
@@ -16,32 +19,47 @@ data Error
   | SessionIdNotFound
   deriving (Show)
 
-envVar :: B.ByteString
-envVar = "DL_PIXIV_FANBOX_SESSION_ID"
+sessionIdEnvVar :: B.ByteString
+sessionIdEnvVar = "DL_PIXIV_FANBOX_SESSION_ID"
 
-fromEnv :: IO (Either Error Config)
-fromEnv = do
-  val <- lookupEnv (B.unpack envVar)
-  let result = case val of
-        Just sessionId -> Right (Config (B.pack sessionId))
-        Nothing -> Left (NoEnvVarProvided ("`" <> envVar <> "` must be provided."))
+downloadChunkSizeEnvVar :: B.ByteString
+downloadChunkSizeEnvVar = "DL_PIXIV_FANBOX_DOWNLOAD_CHUNK_SIZE"
+
+fromEnv :: Int -> IO (Either Error Config)
+fromEnv defaultDownloadChunkSize = do
+  sessionIdVal <- lookupEnv (B.unpack sessionIdEnvVar)
+  downloadChunkSizeVal <- lookupEnv (B.unpack downloadChunkSizeEnvVar)
+
+  let result = case (sessionIdVal, downloadChunkSizeVal) of
+        (Just sessionId, downloadChunkSize) -> Right (Config (B.pack sessionId) (maybe defaultDownloadChunkSize read downloadChunkSize))
+        (Nothing, _) -> Left (NoEnvVarProvided ("`" <> sessionIdEnvVar <> "` must be provided."))
   return result
 
-fromConfigFile :: FilePath -> IO (Either Error Config)
-fromConfigFile configFilePath = do
+fromConfigFile :: FilePath -> Int -> IO (Either Error Config)
+fromConfigFile configFilePath defaultDownloadChunkSize = do
   isFile <- doesFileExist configFilePath
   if isFile
     then do
       content <- B.readFile configFilePath
-      return $ fmap Config (parseContent content)
+      return $ fmap (`Config` parseDownloadChunkSize content) (parseSessionId content)
     else return (Left ConfigFileNotFound)
   where
     sessionIdPattern :: B.ByteString
     sessionIdPattern = "session_id=([a-zA-Z0-9_]+)"
 
-    parseContent :: B.ByteString -> Either Error B.ByteString
-    parseContent content = do
+    downloadChunkSizePattern :: B.ByteString
+    downloadChunkSizePattern = "chunk_size=([0-9]+)"
+
+    parseSessionId :: B.ByteString -> Either Error B.ByteString
+    parseSessionId content = do
       let (_, _, _, matched) = content =~ sessionIdPattern :: (B.ByteString, B.ByteString, B.ByteString, [B.ByteString])
       case matched of
         [x] -> Right x
         _ -> Left SessionIdNotFound
+
+    parseDownloadChunkSize :: B.ByteString -> Int
+    parseDownloadChunkSize content =
+      let (_, _, _, matched) = content =~ downloadChunkSizePattern :: (B.ByteString, B.ByteString, B.ByteString, [B.ByteString])
+       in case matched of
+            [x] -> read (B.unpack x)
+            _ -> defaultDownloadChunkSize

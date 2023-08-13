@@ -8,4 +8,4 @@ import Network.HTTP.Req (Option, Scheme (Https), header)
 import PixivFanbox.Config (Config (..))
 
 sessionIdCookieHeader :: Config -> Option 'Https
-sessionIdCookieHeader (Config sessionId) = header "cookie" (toStrict ("FANBOXSESSID=" <> sessionId))
+sessionIdCookieHeader config = header "cookie" (toStrict ("FANBOXSESSID=" <> configSessionId config))
