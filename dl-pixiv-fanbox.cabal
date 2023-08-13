@@ -24,6 +24,7 @@ library
   build-depends:
     , aeson
     , async
+    , brick
     , bytestring
     , directory
     , exceptions
@@ -36,6 +37,8 @@ library
 
   exposed-modules: PixivFanbox
   other-modules:
+    PixivFanbox.Action.FetchSupportingCreator
+    PixivFanbox.Action.FetchWork
     PixivFanbox.Api
     PixivFanbox.Api.Entity
     PixivFanbox.Api.Plan.ListSupporting
@@ -45,4 +48,3 @@ library
     PixivFanbox.Downloader
     PixivFanbox.Req
     PixivFanbox.Util
-    PixivFanbox.Action.FetchWork
