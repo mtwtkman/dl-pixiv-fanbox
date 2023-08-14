@@ -3,11 +3,13 @@
 
 module PixivFanbox.Api where
 
-import PixivFanbox.Req (sessionIdCookieHeader)
 import Control.Monad.Catch (MonadThrow)
+import Data.Aeson (FromJSON)
+import Data.Maybe (fromJust)
 import qualified Data.Text.Lazy as Tx
-import Network.HTTP.Req (Option, Scheme (Https), header)
+import Network.HTTP.Req (Option, Scheme (Https), header, useHttpsURI)
 import PixivFanbox.Config (Config (..))
+import PixivFanbox.Req (jsonRequest, sessionIdCookieHeader)
 import Text.URI (URI, mkURI)
 
 apiUrlBase :: Tx.Text
@@ -38,3 +40,9 @@ basicHeaders config =
     <> acceptHeader
     <> authorityHeader
     <> sessionIdCookieHeader config
+
+performGet :: FromJSON m => Config -> URI -> IO m
+performGet config uri = do
+  let (url, uriOptions) = fromJust (useHttpsURI uri)
+  let options = basicHeaders config <> uriOptions
+  jsonRequest url options

@@ -4,27 +4,15 @@
 module PixivFanbox.Api.Post.ListCreator where
 
 import Data.Aeson (FromJSON (..), withObject, (.:))
-import Data.Maybe (fromJust)
 import Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as Tx
 import GHC.Generics (Generic)
-import Network.HTTP.Req
-  ( GET (GET),
-    NoReqBody (NoReqBody),
-    Req,
-    defaultHttpConfig,
-    jsonResponse,
-    req,
-    responseBody,
-    runReq,
-    useHttpsURI,
-  )
-import PixivFanbox.Api (basicHeaders, buildApiUri)
+import PixivFanbox.Api (buildApiUri, performGet)
 import PixivFanbox.Api.Entity (PostItem)
 import PixivFanbox.Config (Config)
 import Text.URI (URI)
 
-apiUrl :: Int -> Text -> Req URI
+apiUrl :: Int -> Text -> IO URI
 apiUrl limit creatorId =
   buildApiUri $
     "post.listCreator?creatorId="
@@ -43,9 +31,4 @@ instance FromJSON Response where
     Response <$> inner .: "items"
 
 get :: Int -> Text -> Config -> IO Response
-get limit creatorId config = runReq defaultHttpConfig $ do
-  uri <- apiUrl limit creatorId
-  let (url, uriOptions) = fromJust (useHttpsURI uri)
-  let options = basicHeaders config <> uriOptions
-  resp <- req GET url NoReqBody jsonResponse options
-  return $ responseBody resp
+get limit creatorId config = apiUrl limit creatorId >>= performGet config
