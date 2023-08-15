@@ -6,7 +6,7 @@ module PixivFanbox.Api.Post.Info where
 import Data.Aeson (FromJSON (..), withObject, (.:))
 import Data.Text.Lazy (Text)
 import GHC.Generics (Generic)
-import PixivFanbox.Api (buildApiUri, performGet)
+import PixivFanbox.Api (ApiResponse, buildApiUri, performGet)
 import PixivFanbox.Api.Entity (PostImage)
 import PixivFanbox.Config (Config)
 import Text.URI (URI)
@@ -34,5 +34,5 @@ instance FromJSON Response where
       <*> userInfo
       .: "name"
 
-get :: Text -> Config -> IO Response
+get :: Text -> Config -> IO (ApiResponse Response)
 get postId config = apiUrl postId >>= performGet config

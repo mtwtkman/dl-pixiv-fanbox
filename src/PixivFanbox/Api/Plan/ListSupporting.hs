@@ -6,7 +6,8 @@ module PixivFanbox.Api.Plan.ListSupporting where
 import Data.Aeson (FromJSON (..), withObject, (.:))
 import GHC.Generics (Generic)
 import PixivFanbox.Api
-  ( buildApiUri,
+  ( ApiResponse,
+    buildApiUri,
     performGet,
   )
 import PixivFanbox.Api.Entity (SupportingCreator)
@@ -25,5 +26,5 @@ instance FromJSON Response where
   parseJSON = withObject "Response" $ \o -> do
     Response <$> o .: "body"
 
-get :: Config -> IO Response
+get :: Config -> IO (ApiResponse Response)
 get config = apiUrl >>= performGet config

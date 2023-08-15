@@ -37,6 +37,7 @@ library
 
   exposed-modules: PixivFanbox
   other-modules:
+    PixivFanbox.Action
     PixivFanbox.Action.FetchSupportingCreator
     PixivFanbox.Action.FetchPosts
     PixivFanbox.Action.RetrieveContents

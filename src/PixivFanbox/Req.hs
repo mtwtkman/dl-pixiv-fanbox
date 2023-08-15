@@ -3,12 +3,10 @@
 
 module PixivFanbox.Req where
 
-import Control.Exception (try)
 import Data.Aeson (FromJSON)
 import Data.ByteString.Lazy.Char8 (toStrict)
 import Network.HTTP.Req
   ( GET (GET),
-    HttpException,
     NoReqBody (NoReqBody),
     Option,
     Scheme (Https),
@@ -25,7 +23,7 @@ import PixivFanbox.Config (Config (..))
 sessionIdCookieHeader :: Config -> Option 'Https
 sessionIdCookieHeader config = header "cookie" (toStrict ("FANBOXSESSID=" <> configSessionId config))
 
-jsonRequest :: FromJSON m => Url 'Https -> Option 'Https -> IO (Either HttpException m)
-jsonRequest url options = try $ runReq defaultHttpConfig $ do
+jsonRequest :: FromJSON m => Url 'Https -> Option 'Https -> IO m
+jsonRequest url options = runReq defaultHttpConfig $ do
   resp <- req GET url NoReqBody jsonResponse options
   return $ responseBody resp

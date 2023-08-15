@@ -7,7 +7,7 @@ import Data.Aeson (FromJSON (..), withObject, (.:))
 import Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as Tx
 import GHC.Generics (Generic)
-import PixivFanbox.Api (buildApiUri, performGet)
+import PixivFanbox.Api (ApiResponse, buildApiUri, performGet)
 import PixivFanbox.Api.Entity (PostItem)
 import PixivFanbox.Config (Config)
 import Text.URI (URI)
@@ -30,5 +30,5 @@ instance FromJSON Response where
     inner <- outer .: "body"
     Response <$> inner .: "items"
 
-get :: Int -> Text -> Config -> IO Response
+get :: Int -> Text -> Config -> IO (ApiResponse Response)
 get limit creatorId config = apiUrl limit creatorId >>= performGet config
