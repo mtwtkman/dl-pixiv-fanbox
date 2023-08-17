@@ -3,3 +3,4 @@ config.ini
 req.sh
 *.jpeg
 exam/
+.direnv/
