@@ -15,7 +15,7 @@ common basic
 executable dl-pixiv-fanbox
   import:         warnings, basic
   main-is:        Main.hs
-  ghc-options: -threaded -Wall -Wcompat -O2
+  ghc-options:    -threaded -Wall -Wcompat -O2
   build-depends:  dl-pixiv-fanbox
   hs-source-dirs: app
 
@@ -27,9 +27,14 @@ library
     , async
     , brick
     , bytestring
+    , containers
     , directory
     , exceptions
+    , microlens
+    , microlens-mtl
+    , microlens-th
     , modern-uri
+    , mtl
     , regex-tdfa
     , req
     , scalpel
@@ -37,11 +42,6 @@ library
     , time
     , transformers
     , vty
-    , mtl
-    , microlens
-    , microlens-th
-    , microlens-mtl
-    , containers
 
   exposed-modules: PixivFanbox
   other-modules:
@@ -57,6 +57,6 @@ library
     PixivFanbox.Config
     PixivFanbox.Downloader
     PixivFanbox.Front.Brick
+    PixivFanbox.Front.Brick.Phase.SessionId
     PixivFanbox.Req
     PixivFanbox.Util
-    PixivFanbox.Front.Brick.Phase.SessionId
