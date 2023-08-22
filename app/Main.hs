@@ -1,4 +1,6 @@
 module Main where
 
+import PixivFanbox (runBrickApp)
+
 main :: IO ()
-main = print "hi"
+main = runBrickApp 3 Nothing

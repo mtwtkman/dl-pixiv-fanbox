@@ -11,7 +11,7 @@ data Config = Config
   { configSessionId :: B.ByteString,
     configDownloadChunkSize :: Int
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 data Error
   = NoEnvVarProvided B.ByteString
