@@ -41,6 +41,7 @@ library
     , text
     , time
     , transformers
+    , vector
     , vty
 
   exposed-modules: PixivFanbox
@@ -57,6 +58,8 @@ library
     PixivFanbox.Config
     PixivFanbox.Downloader
     PixivFanbox.Front.Brick
+    PixivFanbox.Front.Brick.Phase.Menu
     PixivFanbox.Front.Brick.Phase.SessionId
+    PixivFanbox.Front.Brick.Phase.SupportingCreators
     PixivFanbox.Req
     PixivFanbox.Util

@@ -22,9 +22,6 @@ import Lens.Micro.TH (makeLenses)
 
 data Name = Edit deriving (Show, Eq, Ord)
 
-configName :: ByteString
-configName = "dl-pixiv-fanbox.ini"
-
 data State = State
   { _focusRing :: F.FocusRing Name,
     _edit :: E.Editor String Name,
