@@ -1,11 +1,12 @@
 module PixivFanbox.Front.Brick where
 
+import Control.Monad (void)
 import PixivFanbox.Api.Entity (SupportingCreator)
 import PixivFanbox.Config (Config (..))
 import qualified PixivFanbox.Config as C
+import qualified PixivFanbox.Front.Brick.Phase.Menu as MenuPhase
 import qualified PixivFanbox.Front.Brick.Phase.SessionId as SessionIdPhase
 import qualified PixivFanbox.Front.Brick.Phase.SupportingCreators as SupporingCreatorsPhase
-import qualified PixivFanbox.Front.Brick.Phase.Menu as MenuPhase
 
 data State
   = LoggedIn
@@ -48,6 +49,18 @@ findConf defaultDownloadChunkSize confPath = do
         Right c -> return (Just c)
         _ -> return Nothing
 
+appLoop :: MenuPhase.Choice -> State -> IO ()
+appLoop _ NotLoggedIn = return ()
+appLoop mode (LoggedIn config supportingCreators selectedSupportingCreator) = case mode of
+  MenuPhase.Quit -> void (putStrLn "bye.")
+  MenuPhase.Setting -> do
+    sessionId <- SessionIdPhase.runApp
+    let newState = LoggedIn (Config sessionId (configDownloadChunkSize config)) supportingCreators selectedSupportingCreator
+    appLoop mode newState
+  MenuPhase.SupportingCreatorList -> do
+    creator <- SupporingCreatorsPhase.runApp config
+    appLoop mode (LoggedIn config supportingCreators (Just creator))
+
 runApp :: Int -> FilePath -> IO ()
 runApp defaultDownloadChunkSize confPath = do
   conf <- findConf defaultDownloadChunkSize confPath
@@ -56,6 +69,4 @@ runApp defaultDownloadChunkSize confPath = do
       login defaultDownloadChunkSize
     loggedIn -> return loggedIn
   selected <- MenuPhase.runApp
-  putStrLn $ "state: " <> show loggedInState <> " selected: " <> show selected
-  -- creator <- manipulateCreatorList loggedInState
-  -- putStrLn $ "creator: " <> show creator <> " state: " <> show loggedInState
+  appLoop selected loggedInState

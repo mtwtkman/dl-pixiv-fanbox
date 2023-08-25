@@ -1,5 +1,5 @@
 dist-newstyle/
-config.ini
+*.ini
 req.sh
 *.jpeg
 exam/

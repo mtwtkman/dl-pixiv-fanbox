@@ -50,7 +50,9 @@ library
     PixivFanbox.Action.FetchPosts
     PixivFanbox.Action.FetchSupportingCreator
     PixivFanbox.Action.RetrieveContents
+    PixivFanbox.Action.ValidateSessionId
     PixivFanbox.Api
+    PixivFanbox.Api.Bell.CountUnread
     PixivFanbox.Api.Entity
     PixivFanbox.Api.Plan.ListSupporting
     PixivFanbox.Api.Post.Info
