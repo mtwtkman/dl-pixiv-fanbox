@@ -18,7 +18,7 @@ data Choice
   = Setting
   | SupportingCreatorList
   | Quit
-  deriving (Show)
+  deriving (Show, Eq)
 
 newtype State = State
   { _selected :: Choice
