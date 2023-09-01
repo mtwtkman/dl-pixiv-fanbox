@@ -54,6 +54,7 @@ library
     PixivFanbox.Api
     PixivFanbox.Api.Bell.CountUnread
     PixivFanbox.Api.Creator.ListRecommended
+    PixivFanbox.Api.Creator.Search
     PixivFanbox.Api.Entity
     PixivFanbox.Api.Plan.ListSupporting
     PixivFanbox.Api.Post.Info

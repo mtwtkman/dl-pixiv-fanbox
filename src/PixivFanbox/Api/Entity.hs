@@ -156,7 +156,7 @@ data RecommendedCreator = RecommendedCreator
     recommendedCreatorDescription :: Text,
     recommendedCreatorHasAdultContent :: Bool,
     recommendedCreatorHasBoothShop :: Bool,
-    recommendedCreatorIsAcceptingRequeste :: Bool,
+    recommendedCreatorIsAcceptingRequest :: Bool,
     recommendedCreatorIsFollowed :: Bool,
     recommendedCreatorIsStopped :: Bool,
     recommendedCreatorIsSupported :: Bool
