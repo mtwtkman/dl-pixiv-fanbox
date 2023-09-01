@@ -6,4 +6,4 @@ import PixivFanbox.Api.Bell.CountUnread (get)
 import PixivFanbox.Config (Config (Config))
 
 perform :: ByteString -> IO Bool
-perform sessionId = respMap False (const True) (get $ Config sessionId 0)
+perform sessionId = respMap False (const True) (get $ Config sessionId)

@@ -1,6 +1,11 @@
 module Main where
 
-import PixivFanbox (runBrickApp)
+import PixivFanbox (fromConfigFile, runBrickApp)
 
 main :: IO ()
-main = runBrickApp 3 "dl-pixiv-fanbox.ini"
+main = do
+  loaded <- fromConfigFile "dl-pixiv-fanbox.ini"
+  let conf = case loaded of
+        Left _ -> Nothing
+        Right c -> Just c
+  runBrickApp conf

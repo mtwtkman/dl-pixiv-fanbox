@@ -54,7 +54,7 @@ data SupportingCreator = SupportingCreator
     supportingCreatorTitle :: Text,
     supportingCreatorFee :: Int,
     supportingCreatorDescription :: Text,
-    supportingCreatorCoverImageUrl :: Text,
+    supportingCreatorCoverImageUrl :: Maybe Text,
     supportingCreatorUser :: User,
     supportingCreatorCreatorId :: Text,
     supportingCreatorHasAdultContent :: Bool,
@@ -127,4 +127,46 @@ instance FromJSON PostImage where
       customOption =
         defaultOptions
           { fieldLabelModifier = dropPrefix "postImage"
+          }
+
+data FoundCreator = FoundCreator
+  { foundCreatorCreatorId :: Text,
+    foundCreatorDescription :: Text,
+    foundCreatorHasAdultContent :: Bool,
+    foundCreatorHasBoothShop :: Bool,
+    foundCreatorIsAcceptingRequest :: Bool,
+    foundCreatorIsFollowed :: Bool,
+    foundCreatorIsStopped :: Bool,
+    foundCreatorIsSupported :: Bool,
+    foundCreatorUser :: User
+  }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON FoundCreator where
+  parseJSON = genericParseJSON customOption
+    where
+      customOption =
+        defaultOptions
+          { fieldLabelModifier = dropPrefix "foundCreator"
+          }
+
+data RecommendedCreator = RecommendedCreator
+  { recommendedCreatorCreatorId :: Text,
+    recommendedCreatorCoverImageUrl :: Maybe Text,
+    recommendedCreatorDescription :: Text,
+    recommendedCreatorHasAdultContent :: Bool,
+    recommendedCreatorHasBoothShop :: Bool,
+    recommendedCreatorIsAcceptingRequeste :: Bool,
+    recommendedCreatorIsFollowed :: Bool,
+    recommendedCreatorIsStopped :: Bool,
+    recommendedCreatorIsSupported :: Bool
+  }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON RecommendedCreator where
+  parseJSON = genericParseJSON customOption
+    where
+      customOption =
+        defaultOptions
+          { fieldLabelModifier = dropPrefix "recommendedCreator"
           }

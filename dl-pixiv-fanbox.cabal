@@ -53,6 +53,7 @@ library
     PixivFanbox.Action.ValidateSessionId
     PixivFanbox.Api
     PixivFanbox.Api.Bell.CountUnread
+    PixivFanbox.Api.Creator.ListRecommended
     PixivFanbox.Api.Entity
     PixivFanbox.Api.Plan.ListSupporting
     PixivFanbox.Api.Post.Info
@@ -60,8 +61,8 @@ library
     PixivFanbox.Config
     PixivFanbox.Downloader
     PixivFanbox.Front.Brick
-    PixivFanbox.Front.Brick.Phase.Menu
-    PixivFanbox.Front.Brick.Phase.SessionId
-    PixivFanbox.Front.Brick.Phase.SupportingCreators
+    PixivFanbox.Front.Brick.UI.Menu
+    PixivFanbox.Front.Brick.UI.SessionId
+    PixivFanbox.Front.Brick.UI.SupportingCreators
     PixivFanbox.Req
     PixivFanbox.Util

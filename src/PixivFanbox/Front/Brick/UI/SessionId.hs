@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module PixivFanbox.Front.Brick.Phase.SessionId where
+module PixivFanbox.Front.Brick.UI.SessionId where
 
 import qualified Brick.AttrMap as A
 import Brick.BChan (BChan, newBChan, writeBChan)
@@ -60,13 +60,11 @@ appEvent :: T.BrickEvent Name Event -> T.EventM Name State ()
 appEvent (T.AppEvent RequestSessionIdValidation) = do
   sesid <- use edit
   case head $ E.getEditContents sesid of
-    [] -> do
-      return ()
+    [] -> return ()
     v -> do
       isValid <- liftIO $ SessionIdValidator.perform (BS.pack v)
       if isValid
-        then do
-          M.halt
+        then M.halt
         else do
           edit .= newEditor
           return ()

@@ -76,9 +76,10 @@ retrieveImage config destInfo postImage page = do
   return destPath
 
 retrieveImageChunk :: Config -> DestInfo -> [PostImage] -> IO [Text]
-retrieveImageChunk config destInfo postImages =
+retrieveImageChunk config destInfo postImages = do
+  let chunkSize = 3
   foldr
     ( \chunk dests -> dests <> mapConcurrently (\(page, image) -> retrieveImage config destInfo image page) chunk
     )
     (return [])
-    (chunkedList (configDownloadChunkSize config) (zip [1 ..] postImages))
+    (chunkedList chunkSize (zip [1 ..] postImages))

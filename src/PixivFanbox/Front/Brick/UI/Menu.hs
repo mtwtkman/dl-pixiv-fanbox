@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module PixivFanbox.Front.Brick.Phase.Menu where
+module PixivFanbox.Front.Brick.UI.Menu where
 
 import qualified Brick.AttrMap as A
 import qualified Brick.Main as M

@@ -1,8 +1,8 @@
 {
-  description = "A very basic flake";
+  description = "flake for dl-pixiv-fanbox";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    flate-utils.url = "github:numtide/flake-utils";
+    flake-utils.url = "github:numtide/flake-utils";
   };
   nixConfig.bash-prompt = "\\e[1;32m\[dev\]\\u@\\w$ \\e[m";
   outputs = { self, nixpkgs, flake-utils, ... }:

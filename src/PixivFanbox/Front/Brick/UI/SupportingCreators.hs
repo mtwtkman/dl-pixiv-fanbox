@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module PixivFanbox.Front.Brick.Phase.SupportingCreators where
+module PixivFanbox.Front.Brick.UI.SupportingCreators where
 
 import qualified Brick.AttrMap as A
 import qualified Brick.Main as M
