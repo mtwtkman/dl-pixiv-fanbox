@@ -35,4 +35,4 @@ instance FromJSON Response where
       .: "name"
 
 get :: Text -> Config -> IO (ApiResponse Response)
-get postId config = apiUrl postId >>= performGet config
+get postId config = apiUrl postId >>= performGet config Nothing

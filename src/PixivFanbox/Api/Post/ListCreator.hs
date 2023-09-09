@@ -31,4 +31,4 @@ instance FromJSON Response where
     Response <$> inner .: "items"
 
 get :: Int -> Text -> Config -> IO (ApiResponse Response)
-get limit creatorId config = apiUrl limit creatorId >>= performGet config
+get limit creatorId config = apiUrl limit creatorId >>= performGet config Nothing

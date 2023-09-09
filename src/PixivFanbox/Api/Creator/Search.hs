@@ -1,24 +1,23 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module PixivFanbox.Api.Creator.Search where
 
 import Data.Aeson (FromJSON (..), withObject, (.:))
-import Data.Text.Lazy (Text, pack)
+import Data.Text.Lazy (Text)
 import GHC.Generics (Generic)
+import Network.HTTP.Req (Option, Scheme (Https), (=:))
 import PixivFanbox.Api (ApiResponse, buildApiUri, performGet)
 import PixivFanbox.Api.Entity (FoundCreator)
 import PixivFanbox.Config (Config)
 import Text.URI (URI)
 
-apiUrl :: Text -> Int -> IO URI
-apiUrl query page =
-  buildApiUri $
-    "search"
-      <> "q="
-      <> query
-      <> "page="
-      <> pack (show page)
+apiUrl :: IO URI
+apiUrl = buildApiUri "creator.search"
+
+query :: Text -> Int -> Option 'Https
+query q page = "q" =: q <> "page" =: page
 
 newtype Response = Response
   { creators :: [FoundCreator]
@@ -27,7 +26,8 @@ newtype Response = Response
 
 instance FromJSON Response where
   parseJSON = withObject "Response" $ \o -> do
-    Response <$> o .: "body"
+    inner <- o .: "body"
+    Response <$> inner .: "creators"
 
 get :: Text -> Int -> Config -> IO (ApiResponse Response)
-get query page config = apiUrl query page >>= performGet config
+get q page config = apiUrl >>= performGet config (Just $ query q page)

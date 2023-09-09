@@ -23,4 +23,4 @@ instance FromJSON Response where
     Response <$> body .: "count"
 
 get :: Config -> IO (ApiResponse Response)
-get config = apiUrl >>= performGet config
+get config = apiUrl >>= performGet config Nothing

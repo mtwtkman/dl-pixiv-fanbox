@@ -6,7 +6,7 @@ module PixivFanbox.Api where
 import Control.Exception (try)
 import Control.Monad.Catch (MonadThrow)
 import Data.Aeson (FromJSON)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import qualified Data.Text.Lazy as Tx
 import Network.HTTP.Req (HttpException, Option, Scheme (Https), header, useHttpsURI)
 import PixivFanbox.Config (Config (..))
@@ -16,7 +16,7 @@ import Text.URI (URI, mkURI)
 apiUrlBase :: Tx.Text
 apiUrlBase = "https://api.fanbox.cc/"
 
-buildApiUri :: MonadThrow m => Tx.Text -> m URI
+buildApiUri :: (MonadThrow m) => Tx.Text -> m URI
 buildApiUri = mkURI . Tx.toStrict . (apiUrlBase <>)
 
 refererHeader :: Option 'Https
@@ -44,8 +44,8 @@ basicHeaders config =
 
 type ApiResponse a = Either HttpException a
 
-performGet :: FromJSON m => Config -> URI -> IO (ApiResponse m)
-performGet config uri = do
+performGet :: (FromJSON m) => Config -> Maybe (Option 'Https) -> URI -> IO (ApiResponse m)
+performGet config q uri = do
   let (url, uriOptions) = fromJust (useHttpsURI uri)
-  let options = basicHeaders config <> uriOptions
+  let options = basicHeaders config <> uriOptions <> fromMaybe mempty q
   try $ jsonRequest url options

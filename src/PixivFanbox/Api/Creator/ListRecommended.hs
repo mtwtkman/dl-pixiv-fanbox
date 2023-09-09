@@ -27,4 +27,4 @@ instance FromJSON Response where
     Response <$> o .: "body"
 
 get :: Config -> IO (ApiResponse Response)
-get config = apiUrl >>= performGet config
+get config = apiUrl >>= performGet config Nothing
