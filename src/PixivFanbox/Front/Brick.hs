@@ -13,12 +13,22 @@ import Lens.Micro.TH (makeLenses)
 import PixivFanbox.Api.Entity (SupportingCreator)
 import PixivFanbox.Config (Config)
 
+data SettingForm = SessionIdInputField deriving (Show, Eq, Ord)
+
+data SupportingCreatorForm
+  = SupportingCreatorListField
+  | SupportingCreatorSearchField
+  deriving (Show, Eq, Ord)
+
+data PostForm
+  = PostListField
+  | PostSearchField
+  deriving (Show, Eq, Ord)
+
 data ResourceName
-  = Setting
-  | SupportingCreatorList
-  | SupportingCreatorFilter
-  | PostList
-  | PostFilter
+  = Setting SettingForm
+  | SupportingCreator SupportingCreatorForm
+  | Post PostForm
   deriving (Show, Eq, Ord)
 
 data Event
@@ -32,42 +42,59 @@ data Event
 data State
   = LoggedIn
       { _config :: Config,
-        _focusRing :: F.FocusRing ResourceName,
+        _loggedInFocusRing :: F.FocusRing ResourceName,
         _selectedSupportingCreator :: Maybe SupportingCreator,
         _knownSupportingCreators :: [SupportingCreator]
       }
   | NotLoggedIn
+      { _settingFocusRing :: F.FocusRing ResourceName
+      }
   deriving (Show)
 
 makeLenses ''State
 
 initialState :: Maybe Config -> State
-initialState Nothing = NotLoggedIn
+initialState Nothing =
+  NotLoggedIn
+    ( F.focusRing [Setting SessionIdInputField]
+    )
 initialState (Just c) =
   LoggedIn
     c
     ( F.focusRing
-        [ Setting,
-          SupportingCreatorFilter,
-          PostFilter
+        [ SupportingCreator SupportingCreatorSearchField,
+          Post PostSearchField
         ]
     )
     Nothing
     []
 
 drawUI :: State -> [T.Widget ResourceName]
-drawUI state = [ui]
+drawUI (NotLoggedIn _) = [ui]
   where
-    ui = str "xx"
+    ui = str "setting"
+drawUI (LoggedIn {}) = [ui]
+  where
+    ui = str "logged in"
 
 appEvent :: T.BrickEvent ResourceName Event -> T.EventM ResourceName State ()
-appEvent ev = undefined
+appEvent (T.VtyEvent (V.EvKey V.KEsc [])) = M.halt
+appEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [])) = M.halt
+appEvent (T.VtyEvent (V.EvKey (V.KChar 's') [])) = do
+  currentState <- T.get
+  case currentState of
+    NotLoggedIn _ -> return ()
+    LoggedIn {} -> do
+      T.put (initialState Nothing)
+      return ()
+
+appEvent _ = return ()
 
 appMap :: A.AttrMap
 appMap = A.attrMap V.defAttr []
 
 appCursor :: State -> [T.CursorLocation ResourceName] -> Maybe (T.CursorLocation ResourceName)
-appCursor state = undefined
+appCursor = M.showFirstCursor
 
 app :: M.App State Event ResourceName
 app =
@@ -85,5 +112,5 @@ runApp c = do
   let buildVty = V.mkVty V.defaultConfig
   initialVty <- buildVty
   finalState <- M.customMain initialVty buildVty (Just chan) app (initialState c)
-  putStrLn $ show finalState
+  print finalState
   return ()
