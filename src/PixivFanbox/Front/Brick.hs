@@ -7,8 +7,11 @@ import Brick.BChan (newBChan)
 import qualified Brick.Focus as F
 import qualified Brick.Main as M
 import qualified Brick.Types as T
+import qualified Brick.Widgets.Center as C
 import Brick.Widgets.Core (str)
+import qualified Brick.Widgets.Edit as E
 import qualified Graphics.Vty as V
+import Lens.Micro ((^?!))
 import Lens.Micro.TH (makeLenses)
 import PixivFanbox.Api.Entity (SupportingCreator)
 import PixivFanbox.Config (Config)
@@ -40,14 +43,16 @@ data Event
   | Download
 
 data State
-  = LoggedIn
+  = Explorering
       { _config :: Config,
-        _loggedInFocusRing :: F.FocusRing ResourceName,
+        _exploreringFocusRing :: F.FocusRing ResourceName,
         _selectedSupportingCreator :: Maybe SupportingCreator,
         _knownSupportingCreators :: [SupportingCreator]
       }
-  | NotLoggedIn
-      { _settingFocusRing :: F.FocusRing ResourceName
+  | Configuring
+      { _configureringFocusRing :: F.FocusRing ResourceName,
+        _session :: E.Editor String ResourceName,
+        _currentConfig :: Maybe Config
       }
   deriving (Show)
 
@@ -55,11 +60,14 @@ makeLenses ''State
 
 initialState :: Maybe Config -> State
 initialState Nothing =
-  NotLoggedIn
+  Configuring
     ( F.focusRing [Setting SessionIdInputField]
     )
+    ( E.editor (Setting SessionIdInputField) (Just 1) ""
+    )
+    Nothing
 initialState (Just c) =
-  LoggedIn
+  Explorering
     c
     ( F.focusRing
         [ SupportingCreator SupportingCreatorSearchField,
@@ -70,10 +78,11 @@ initialState (Just c) =
     []
 
 drawUI :: State -> [T.Widget ResourceName]
-drawUI (NotLoggedIn _) = [ui]
+drawUI s@(Configuring {}) = [ui]
   where
-    ui = str "setting"
-drawUI (LoggedIn {}) = [ui]
+    c = F.withFocusRing (s ^?! configureringFocusRing) (E.renderEditor (str . unlines)) (s ^?! session)
+    ui = C.center $ str "session id: "
+drawUI (Explorering {}) = [ui]
   where
     ui = str "logged in"
 
@@ -83,11 +92,10 @@ appEvent (T.VtyEvent (V.EvKey (V.KChar 'q') [])) = M.halt
 appEvent (T.VtyEvent (V.EvKey (V.KChar 's') [])) = do
   currentState <- T.get
   case currentState of
-    NotLoggedIn _ -> return ()
-    LoggedIn {} -> do
+    Configuring {} -> return ()
+    Explorering {} -> do
       T.put (initialState Nothing)
       return ()
-
 appEvent _ = return ()
 
 appMap :: A.AttrMap
