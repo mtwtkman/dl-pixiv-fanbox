@@ -7,9 +7,16 @@ import Brick.BChan (newBChan)
 import qualified Brick.Focus as F
 import qualified Brick.Main as M
 import qualified Brick.Types as T
-import Brick.Util (style)
+import Brick.Util (on, style)
 import qualified Brick.Widgets.Center as C
-import Brick.Widgets.Core (hLimit, modifyDefAttr, str, (<+>))
+import Brick.Widgets.Core
+  ( hBox,
+    hLimit,
+    modifyDefAttr,
+    str,
+    vBox,
+    (<+>),
+  )
 import qualified Brick.Widgets.Edit as E
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Graphics.Vty as V
@@ -19,10 +26,10 @@ import Lens.Micro.TH (makeLenses)
 import PixivFanbox.Api.Entity (SupportingCreator)
 import PixivFanbox.Config (Config (configSessionId))
 
-data SettingForm
+data SessionIdForm
   = SessionIdInputField
-  | SessionIdModificationSave
-  | SessionIdModificationCancel
+  | SessionIdSaveButton
+  | SessionIdCancelButton
   deriving (Show, Eq, Ord)
 
 data SupportingCreatorForm
@@ -35,19 +42,33 @@ data PostForm
   | PostSearchField
   deriving (Show, Eq, Ord)
 
-data ResourceName
-  = Setting SettingForm
-  | SupportingCreator SupportingCreatorForm
-  | Post PostForm
+newtype ConfiguringResource = SessionIdForm SessionIdForm
   deriving (Show, Eq, Ord)
 
+data ExploreringResource
+  = SupportingCreatorForm SupportingCreatorForm
+  | PostForm PostForm
+  deriving (Show, Eq, Ord)
+
+data ResourceName
+  = ConfiguringResource ConfiguringResource
+  | ExploreringResource ExploreringResource
+  deriving (Show, Eq, Ord)
+
+data ConfigureEvent
+  = SaveSessionId
+  | CancelEditSessionId
+  deriving (Show)
+
+data ExplorerEvent
+  = Download
+  | GoToConfig
+  deriving (Show)
+
 data Event
-  = MakeAppConfig
-  | FetchSupportingCreators
-  | FetchPosts
-  | FilterSupportingCreators
-  | FilterPosts
-  | Download
+  = ConfigureEvent ConfigureEvent
+  | ExplorerEvent ExplorerEvent
+  deriving (Show)
 
 data State
   = Explorering
@@ -71,8 +92,8 @@ initialState (Just c) =
   Explorering
     c
     ( F.focusRing
-        [ SupportingCreator SupportingCreatorSearchField,
-          Post PostSearchField
+        [ ExploreringResource (SupportingCreatorForm SupportingCreatorSearchField),
+          ExploreringResource (PostForm PostSearchField)
         ]
     )
     Nothing
@@ -81,9 +102,13 @@ initialState (Just c) =
 startConfiguring :: Maybe Config -> State
 startConfiguring c =
   Configuring
-    ( F.focusRing [Setting SessionIdInputField]
+    ( F.focusRing
+        [ ConfiguringResource (SessionIdForm SessionIdInputField),
+          ConfiguringResource (SessionIdForm SessionIdSaveButton),
+          ConfiguringResource (SessionIdForm SessionIdCancelButton)
+        ]
     )
-    ( E.editor (Setting SessionIdInputField) (Just 1) (maybe "" (B.unpack . configSessionId) c)
+    ( E.editor (ConfiguringResource (SessionIdForm SessionIdInputField)) (Just 1) (maybe "" (B.unpack . configSessionId) c)
     )
     c
 
@@ -95,10 +120,17 @@ drawUI s@(Configuring {}) = [ui]
         (s ^?! configureringFocusRing)
         (E.renderEditor (str . unlines))
         (s ^?! sessionEdit)
-    ui = C.center $ str "session id: " <+> modifyDefAttr (const $ style V.underline) (hLimit 50 e)
-drawUI (Explorering {}) = [ui]
+    ui =
+      vBox
+        [ C.center $ str "session id: " <+> modifyDefAttr (const $ style V.underline) (hLimit 50 e),
+          hBox
+            [ str "SAVE",
+              str "CANCEL"
+            ]
+        ]
+drawUI _s@(Explorering {}) = [ui]
   where
-    ui = str "logged in"
+    ui = vBox [str "logged in"]
 
 handleConfiguring :: State -> T.BrickEvent ResourceName Event -> T.EventM ResourceName State ()
 handleConfiguring (Explorering {}) _ = error "invalid handler"
@@ -109,7 +141,7 @@ handleExploering :: State -> T.BrickEvent ResourceName Event -> T.EventM Resourc
 handleExploering (Configuring {}) _ = error "invalid handler"
 handleExploering s@(Explorering {}) ev = do
   case ev of
-    (T.VtyEvent (V.EvKey (V.KChar 's') [])) -> do
+    (T.VtyEvent (V.EvKey (V.KChar 'c') [V.MCtrl])) -> do
       T.put (startConfiguring (Just $ s ^?! config))
       return ()
     _ -> return ()
