@@ -7,7 +7,7 @@ import Brick.BChan (newBChan)
 import qualified Brick.Focus as F
 import qualified Brick.Main as M
 import qualified Brick.Types as T
-import Brick.Util (on, style)
+import Brick.Util (bg, on, style)
 import qualified Brick.Widgets.Center as C
 import Brick.Widgets.Core
   ( hBox,
@@ -17,11 +17,12 @@ import Brick.Widgets.Core
     vBox,
     (<+>),
   )
+import qualified Brick.Widgets.Dialog as D
 import qualified Brick.Widgets.Edit as E
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Graphics.Vty as V
 import Lens.Micro ((^?!))
-import Lens.Micro.Mtl (zoom)
+import Lens.Micro.Mtl (zoom, (%=))
 import Lens.Micro.TH (makeLenses)
 import PixivFanbox.Api.Entity (SupportingCreator)
 import PixivFanbox.Config (Config (configSessionId))
@@ -70,6 +71,9 @@ data Event
   | ExplorerEvent ExplorerEvent
   deriving (Show)
 
+data ConfiguringChoice = Save | Cancel
+  deriving (Show)
+
 data State
   = Explorering
       { _config :: Config,
@@ -78,11 +82,11 @@ data State
         _knownSupportingCreators :: [SupportingCreator]
       }
   | Configuring
-      { _configureringFocusRing :: F.FocusRing ResourceName,
+      { _configuringFocusRing :: F.FocusRing ResourceName,
         _sessionEdit :: E.Editor String ResourceName,
-        _currentConfig :: Maybe Config
+        _currentConfig :: Maybe Config,
+        _configureButtons :: D.Dialog ConfiguringChoice ResourceName
       }
-  deriving (Show)
 
 makeLenses ''State
 
@@ -111,22 +115,25 @@ startConfiguring c =
     ( E.editor (ConfiguringResource (SessionIdForm SessionIdInputField)) (Just 1) (maybe "" (B.unpack . configSessionId) c)
     )
     c
+    (D.dialog Nothing (Just (ConfiguringResource (SessionIdForm SessionIdSaveButton), choices)) 50)
+  where
+    choices =
+      [ ("Save", ConfiguringResource (SessionIdForm SessionIdSaveButton), Save),
+        ("Cancel", ConfiguringResource (SessionIdForm SessionIdCancelButton), Cancel)
+      ]
 
 drawUI :: State -> [T.Widget ResourceName]
 drawUI s@(Configuring {}) = [ui]
   where
     e =
       F.withFocusRing
-        (s ^?! configureringFocusRing)
+        (s ^?! configuringFocusRing)
         (E.renderEditor (str . unlines))
         (s ^?! sessionEdit)
     ui =
       vBox
         [ C.center $ str "session id: " <+> modifyDefAttr (const $ style V.underline) (hLimit 50 e),
-          hBox
-            [ str "SAVE",
-              str "CANCEL"
-            ]
+          D.renderDialog (s ^?! configureButtons) (str "")
         ]
 drawUI _s@(Explorering {}) = [ui]
   where
@@ -134,8 +141,12 @@ drawUI _s@(Explorering {}) = [ui]
 
 handleConfiguring :: State -> T.BrickEvent ResourceName Event -> T.EventM ResourceName State ()
 handleConfiguring (Explorering {}) _ = error "invalid handler"
-handleConfiguring _s@(Configuring {}) ev = do
-  zoom sessionEdit $ E.handleEditorEvent ev
+handleConfiguring s@(Configuring {}) (T.VtyEvent ev) = do
+  let focused = F.focusGetCurrent (s ^?! configuringFocusRing)
+  case focused of
+    Just (ConfiguringResource (SessionIdForm _)) -> zoom configureButtons $ D.handleDialogEvent ev
+    _ -> return ()
+handleConfiguring (Configuring {}) ev = zoom sessionEdit $ E.handleEditorEvent ev
 
 handleExploering :: State -> T.BrickEvent ResourceName Event -> T.EventM ResourceName State ()
 handleExploering (Configuring {}) _ = error "invalid handler"
@@ -158,7 +169,10 @@ appMap :: A.AttrMap
 appMap =
   A.attrMap
     V.defAttr
-    []
+    [ (D.dialogAttr, V.white `on` V.blue),
+      (D.buttonAttr, V.black `on` V.white),
+      (D.buttonSelectedAttr, bg V.yellow)
+    ]
 
 appCursor :: State -> [T.CursorLocation ResourceName] -> Maybe (T.CursorLocation ResourceName)
 appCursor = M.showFirstCursor
@@ -178,6 +192,5 @@ runApp c = do
   chan <- newBChan 10
   let buildVty = V.mkVty V.defaultConfig
   initialVty <- buildVty
-  finalState <- M.customMain initialVty buildVty (Just chan) app (initialState c)
-  print finalState
+  _ <- M.customMain initialVty buildVty (Just chan) app (initialState c)
   return ()
