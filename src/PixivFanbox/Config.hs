@@ -12,6 +12,9 @@ newtype Config = Config
   }
   deriving (Show, Eq)
 
+configFromString :: String -> Config
+configFromString = Config . B.pack
+
 data Error
   = NoEnvVarProvided B.ByteString
   | ConfigFileNotFound

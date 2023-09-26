@@ -10,8 +10,7 @@ import qualified Brick.Types as T
 import Brick.Util (bg, on, style)
 import qualified Brick.Widgets.Center as C
 import Brick.Widgets.Core
-  ( hBox,
-    hLimit,
+  ( hLimit,
     modifyDefAttr,
     str,
     vBox,
@@ -22,10 +21,10 @@ import qualified Brick.Widgets.Edit as E
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Graphics.Vty as V
 import Lens.Micro ((^?!))
-import Lens.Micro.Mtl (zoom, (%=))
+import Lens.Micro.Mtl (zoom, (%=), (.=))
 import Lens.Micro.TH (makeLenses)
 import PixivFanbox.Api.Entity (SupportingCreator)
-import PixivFanbox.Config (Config (configSessionId))
+import PixivFanbox.Config (Config (configSessionId), configFromString)
 
 data SessionIdForm
   = SessionIdInputField
@@ -85,7 +84,8 @@ data State
       { _configuringFocusRing :: F.FocusRing ResourceName,
         _sessionEdit :: E.Editor String ResourceName,
         _currentConfig :: Maybe Config,
-        _configureButtons :: D.Dialog ConfiguringChoice ResourceName
+        _configureButtons :: D.Dialog ConfiguringChoice ResourceName,
+        _fixSessionIdEditing :: Bool
       }
 
 makeLenses ''State
@@ -116,6 +116,7 @@ startConfiguring c =
     )
     c
     (D.dialog Nothing (Just (ConfiguringResource (SessionIdForm SessionIdSaveButton), choices)) 50)
+    False
   where
     choices =
       [ ("Save", ConfiguringResource (SessionIdForm SessionIdSaveButton), Save),
@@ -131,22 +132,32 @@ drawUI s@(Configuring {}) = [ui]
         (E.renderEditor (str . unlines))
         (s ^?! sessionEdit)
     ui =
-      vBox
-        [ C.center $ str "session id: " <+> modifyDefAttr (const $ style V.underline) (hLimit 50 e),
-          D.renderDialog (s ^?! configureButtons) (str "")
-        ]
+      C.center $
+        if s ^?! fixSessionIdEditing
+          then D.renderDialog (s ^?! configureButtons) (str "Session Id")
+          else str "session id: " <+> modifyDefAttr (const $ style V.underline) (hLimit 50 e)
 drawUI _s@(Explorering {}) = [ui]
   where
     ui = vBox [str "logged in"]
 
 handleConfiguring :: State -> T.BrickEvent ResourceName Event -> T.EventM ResourceName State ()
 handleConfiguring (Explorering {}) _ = error "invalid handler"
-handleConfiguring s@(Configuring {}) (T.VtyEvent ev) = do
-  let focused = F.focusGetCurrent (s ^?! configuringFocusRing)
-  case focused of
-    Just (ConfiguringResource (SessionIdForm _)) -> zoom configureButtons $ D.handleDialogEvent ev
+handleConfiguring s@(Configuring {}) ev = do
+  case (s ^?! fixSessionIdEditing, ev) of
+    (True, T.VtyEvent (V.EvKey V.KEnter [])) ->
+      case F.focusGetCurrent (s ^?! configuringFocusRing) of
+        Just (ConfiguringResource (SessionIdForm SessionIdSaveButton)) -> do
+          let config' = configFromString $ head $ E.getEditContents (s ^?! sessionEdit)
+          T.put (initialState (Just config'))
+        Just (ConfiguringResource (SessionIdForm SessionIdCancelButton)) -> do
+          T.put (initialState Nothing)
+        _ -> return ()
+    (False, T.VtyEvent (V.EvKey V.KEnter [])) -> do
+      fixSessionIdEditing .= True
     _ -> return ()
-handleConfiguring (Configuring {}) ev = zoom sessionEdit $ E.handleEditorEvent ev
+
+-- (Just (ConfiguringResource (SessionIdForm _)), T.VtyEvent e) -> zoom configureButtons $ D.handleDialogEvent e
+-- _ -> zoom sessionEdit $ E.handleEditorEvent ev
 
 handleExploering :: State -> T.BrickEvent ResourceName Event -> T.EventM ResourceName State ()
 handleExploering (Configuring {}) _ = error "invalid handler"
