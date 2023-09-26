@@ -134,7 +134,7 @@ drawUI s@(Configuring {}) = [ui]
     ui =
       C.center $
         if s ^?! fixSessionIdEditing
-          then D.renderDialog (s ^?! configureButtons) (str "Session Id")
+          then D.renderDialog (s ^?! configureButtons) (str "")
           else str "session id: " <+> modifyDefAttr (const $ style V.underline) (hLimit 50 e)
 drawUI _s@(Explorering {}) = [ui]
   where
@@ -143,21 +143,26 @@ drawUI _s@(Explorering {}) = [ui]
 handleConfiguring :: State -> T.BrickEvent ResourceName Event -> T.EventM ResourceName State ()
 handleConfiguring (Explorering {}) _ = error "invalid handler"
 handleConfiguring s@(Configuring {}) ev = do
-  case (s ^?! fixSessionIdEditing, ev) of
-    (True, T.VtyEvent (V.EvKey V.KEnter [])) ->
-      case F.focusGetCurrent (s ^?! configuringFocusRing) of
+  if s ^?! fixSessionIdEditing
+    then handleSessionIdEditConfirmation ev
+    else handleSessionIdEdit ev
+  where
+    handleSessionIdEditConfirmation :: T.BrickEvent ResourceName Event -> T.EventM ResourceName State ()
+    handleSessionIdEditConfirmation (T.VtyEvent (V.EvKey V.KEnter [])) = do
+      case D.getDialogFocus (s ^?! configureButtons) of
         Just (ConfiguringResource (SessionIdForm SessionIdSaveButton)) -> do
-          let config' = configFromString $ head $ E.getEditContents (s ^?! sessionEdit)
-          T.put (initialState (Just config'))
+          let newConfig = configFromString $ head $ E.getEditContents (s ^?! sessionEdit)
+          T.put $ initialState (Just newConfig)
         Just (ConfiguringResource (SessionIdForm SessionIdCancelButton)) -> do
-          T.put (initialState Nothing)
+          T.put $ startConfiguring (s ^?! currentConfig)
         _ -> return ()
-    (False, T.VtyEvent (V.EvKey V.KEnter [])) -> do
-      fixSessionIdEditing .= True
-    _ -> return ()
+    handleSessionIdEditConfirmation (T.VtyEvent e) = zoom configureButtons $ D.handleDialogEvent e
+    handleSessionIdEditConfirmation _ = return ()
 
--- (Just (ConfiguringResource (SessionIdForm _)), T.VtyEvent e) -> zoom configureButtons $ D.handleDialogEvent e
--- _ -> zoom sessionEdit $ E.handleEditorEvent ev
+    handleSessionIdEdit :: T.BrickEvent ResourceName Event -> T.EventM ResourceName State ()
+    handleSessionIdEdit (T.VtyEvent (V.EvKey V.KEnter [])) = do
+      fixSessionIdEditing .= True
+    handleSessionIdEdit _ = zoom sessionEdit $ E.handleEditorEvent ev
 
 handleExploering :: State -> T.BrickEvent ResourceName Event -> T.EventM ResourceName State ()
 handleExploering (Configuring {}) _ = error "invalid handler"
